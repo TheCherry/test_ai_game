@@ -61,52 +61,59 @@ class GameField:
     def move(self, direction):
         new_pos = tuple(np.add(self.player_pos, direction))
         self.steps += 1
-        if(self.logic_move(new_pos, direction)):
-            self.matrix[self.player_pos] = GObj.AIR.value ## remove player
-            self.matrix[new_pos] = GObj.PLAYER.value ## set player to new location
+        new_obj = self.logic_move(self.player_pos, new_pos, direction)
+        if(new_obj):
+            self.matrix[self.player_pos] = new_obj.value ## set new_obj
+            # self.matrix[new_pos] = GObj.PLAYER.value ## set player to new location
             self.player_pos = new_pos
             return True
         return False
 
 
-    def logic_move(self, pos, direction):
+    def logic_move(self, current_pos, pos, direction):
         ## set gamestats by specific fields
-        ## returns True if the player was able to move
-        gobj = GObj(self.matrix.item(pos))
-        if(gobj is GObj.AIR):
-            return True
-        elif(gobj is GObj.FPROTECT):
+        ## returns new_obj if the player was able to move
+        ## returns False if the player wasnt able to move
+        current_gobj = GObj(self.matrix.item(current_pos))
+
+        ## check first the current object with ALLOWED directions:
+        if(current_gobj is GObj.ALLOW_DIRECTION_DOWN and direction is not Direction.DOWN):
+            return False
+        elif(current_gobj is GObj.ALLOW_DIRECTION_UP and direction is not Direction.UP):
+            return False
+        elif(current_gobj is GObj.ALLOW_DIRECTION_RIGHT and direction is not Direction.RIGHT):
+            return False
+        elif(current_gobj is GObj.ALLOW_DIRECTION_LEFT and direction is not Direction.LEFT):
+            return False
+
+        ## check the next gameobject action
+        new_gobj = GObj(self.matrix.item(pos))
+        if(new_gobj is GObj.AIR):
+            return GObj.AIR
+        elif(new_gobj is GObj.FPROTECT):
             self.anti_fire += 1
-            return True
-        elif(gobj is GObj.FIRE):
+            return GObj.AIR
+        elif(new_gobj is GObj.FIRE):
             if(self.anti_fire > 0):
                 self.anti_fire -= 1
-                return True
+                return GObj.AIR
             else:
                 self.gameover = True
-                return True
-        elif(gobj is GObj.WALL):
+                return GObj.AIR
+        elif(new_gobj is GObj.WALL):
             return False
-        elif(gobj is GObj.KEY):
+        elif(new_gobj is GObj.KEY):
             self.keys += 1
-            return True
-        elif(gobj is GObj.GOAL):
+            return GObj.AIR
+        elif(new_gobj is GObj.GOAL):
             self.finish = True
-            return True
-        elif(gobj is GObj.DOOR):
+            return GObj.AIR
+        elif(new_gobj is GObj.DOOR):
             if(self.keys > 0):
                 self.keys -= 1
-                return True
+                return GObj.AIR
             else:
                 return False
-        elif(gobj is GObj.ALLOW_DIRECTION_DOWN and direction is Direction.DOWN):
-            return True
-        elif(gobj is GObj.ALLOW_DIRECTION_UP and direction is Direction.UP):
-            return True
-        elif(gobj is GObj.ALLOW_DIRECTION_RIGHT and direction is Direction.RIGHT):
-            return True
-        elif(gobj is GObj.ALLOW_DIRECTION_LEFT and direction is Direction.LEFT):
-            return True
         return False
 
 
