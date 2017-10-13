@@ -29,10 +29,6 @@ class GObj(Enum):
     def nn_value(self):
         return self.value/100
 
-## test one_hot
-for gobj in GObj:
-    print(gobj.one_hot())
-
 
 example_level = np.array([
    # 0  1  2  3  4  5  6  7  8  9 10 11
@@ -55,7 +51,7 @@ example_level = np.array([
 class GameField:
     def __init__(self, level_matrix):
         self.matrix = level_matrix
-        self.player_pos = np.resize(np.where(self.matrix == GObj.PLAYER.value), new_shape=2)
+        self.player_pos = tuple(np.resize(np.where(self.matrix == GObj.PLAYER.value), new_shape=2))
         self.steps = 0 ## for rewards
         self.keys = 0
         self.anti_fire = 0
@@ -63,17 +59,20 @@ class GameField:
         self.gameover = False
 
     def move(self, direction):
-        new_pos = np.add(self.player_pos, direction)
+        new_pos = tuple(np.add(self.player_pos, direction))
         self.steps += 1
         if(self.logic_move(new_pos, direction)):
-            self.matrix[tuple(self.player_pos)] = GObj.AIR.nn_value ## remove player
-            self.matrix[tuple(new_pos)] = GObj.PLAYER.nn_value ## set player to new location
+            self.matrix[self.player_pos] = GObj.AIR.value ## remove player
+            self.matrix[new_pos] = GObj.PLAYER.value ## set player to new location
+            self.player_pos = new_pos
+            return True
+        return False
 
 
     def logic_move(self, pos, direction):
         ## set gamestats by specific fields
         ## returns True if the player was able to move
-        gobj = GObj(self.matrix.item(tuple(pos)))
+        gobj = GObj(self.matrix.item(pos))
         if(gobj is GObj.AIR):
             return True
         elif(gobj is GObj.FPROTECT):
@@ -113,8 +112,19 @@ class GameField:
 
 
 gf = GameField(example_level)
-gf.move(Direction.DOWN)
-
-
+### HARD TEST:
+print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
+print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+print("{:<10} - {}".format("RIGHT", gf.move(Direction.RIGHT)))
+print("{:<10} - {}".format("RIGHT", gf.move(Direction.RIGHT)))
+print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
+print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
+print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+print(gf.finish)
 
 ##
