@@ -48,15 +48,25 @@ example_level = np.array([
     [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]  # 13
 ])
 
+100 / 18 * 10
+
 class GameField:
-    def __init__(self, level_matrix):
+    def __init__(self, level_matrix, possible_best_steps):
         self.matrix = level_matrix
         self.player_pos = tuple(np.resize(np.where(self.matrix == GObj.PLAYER.value), new_shape=2))
         self.steps = 0 ## for rewards
         self.keys = 0
+        self.possible_best_steps = possible_best_steps
         self.anti_fire = 0
         self.finish = False
         self.gameover = False
+
+    def reward(self):
+        if(self.finish):
+            return 1000 / self.steps * self.possible_best_steps
+        elif(self.gameover):
+            return 0
+        return None
 
     def get_nn_matrix(self, one_hot=True):
         ret = []
@@ -129,7 +139,7 @@ class GameField:
 
 
 
-gf = GameField(example_level)
+gf = GameField(example_level, 10)
 ### HARD TEST:
 print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
 print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
@@ -144,5 +154,6 @@ print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
 print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
 print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
 print(gf.finish)
-print(gf.get_nn_matrix(False))
+print("Reward: {:>4}/1000".format(gf.reward()))
+# print(gf.get_nn_matrix(False))
 ##
