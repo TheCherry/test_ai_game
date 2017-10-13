@@ -8,18 +8,18 @@ class Direction():
     UP      = [-1, 0]
 
 class GObj(Enum):
-    AIR                         = 0 ## Movable field, no actions
-    PLAYER                      = 1 ## The Player
-    WALL                        = 2 ## A Wall, player cant pass
-    FIRE                        = 3 ## Kills the player if he havent a Fire protection
-    FPROTECT                    = 4 ## Fire protection
-    RESTRICT_DIRECTION_RIGHT    = 5 ## only moveable to right
-    RESTRICT_DIRECTION_LEFT     = 6 ## only moveable to left
-    RESTRICT_DIRECTION_DOWN     = 7 ## only moveable to down
-    RESTRICT_DIRECTION_UP       = 8 ## only moveable to up
-    KEY                         = 9 ## key, needed for doors
-    DOOR                        = 10 ## door, only passable with a key
-    GOAL                        = 11 ## the end
+    AIR                      = 0 ## Movable field, no actions
+    PLAYER                   = 1 ## The Player
+    WALL                     = 2 ## A Wall, player cant pass
+    FIRE                     = 3 ## Kills the player if he havent a Fire protection
+    FPROTECT                 = 4 ## Fire protection
+    ALLOW_DIRECTION_RIGHT    = 5 ## only moveable to right
+    ALLOW_DIRECTION_LEFT     = 6 ## only moveable to left
+    ALLOW_DIRECTION_DOWN     = 7 ## only moveable to down
+    ALLOW_DIRECTION_UP       = 8 ## only moveable to up
+    KEY                      = 9 ## key, needed for doors
+    DOOR                     = 10 ## door, only passable with a key
+    GOAL                     = 11 ## the end
 
     def one_hot(self):
         ret = np.zeros(len(GObj), dtype=np.int)
