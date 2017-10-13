@@ -27,7 +27,7 @@ class GObj(Enum):
         return ret
 
     def nn_value(self):
-        return self.value/100
+        return 1.0*self.value/(len(GObj)-1)
 
 
 example_level = np.array([
@@ -57,6 +57,17 @@ class GameField:
         self.anti_fire = 0
         self.finish = False
         self.gameover = False
+
+    def get_nn_matrix(self, one_hot=True):
+        ret = []
+        for row in self.matrix:
+            ret.append([])
+            for field in row:
+                if(one_hot):
+                    ret[-1].append(GObj(field).one_hot())
+                else:
+                    ret[-1].append(GObj(field).nn_value())
+        return np.array(ret)
 
     def move(self, direction):
         new_pos = tuple(np.add(self.player_pos, direction))
@@ -133,5 +144,5 @@ print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
 print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
 print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
 print(gf.finish)
-
+print(gf.get_nn_matrix(False))
 ##
