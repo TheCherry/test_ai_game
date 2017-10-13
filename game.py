@@ -68,7 +68,7 @@ class GameField:
             self.matrix[tuple(new_pos)] = GObj.PLAYER.nn_value
         print(self.matrix)
 
-    def logic_move(self, pos):
+    def logic_move(self, pos, direction):
         ## set gamestats by specific fields
         ## returns True if the player was able to move
         gobj = GObj(self.matrix.item(tuple(pos)))
@@ -98,6 +98,15 @@ class GameField:
                 return True
             else:
                 return False
+        elif(gobj is GObj.ALLOW_DIRECTION_DOWN and direction is Direction.DOWN):
+            return True
+        elif(gobj is GObj.ALLOW_DIRECTION_UP and direction is Direction.UP):
+            return True
+        elif(gobj is GObj.ALLOW_DIRECTION_RIGHT and direction is Direction.RIGHT):
+            return True
+        elif(gobj is GObj.ALLOW_DIRECTION_LEFT and direction is Direction.LEFT):
+            return True
+        return False
 
 
 
