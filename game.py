@@ -56,17 +56,19 @@ class GameField:
     def __init__(self, level_matrix):
         self.matrix = level_matrix
         self.player_pos = np.resize(np.where(self.matrix == GObj.PLAYER.value), new_shape=2)
-        self.steps = 0
+        self.steps = 0 ## for rewards
         self.keys = 0
+        self.anti_fire = 0
+        self.finish = False
         self.gameover = False
 
     def move(self, direction):
         new_pos = np.add(self.player_pos, direction)
         self.steps += 1
-        if(self.logic_move(new_pos)):
-            self.matrix[tuple(self.player_pos)] = GObj.AIR.nn_value
-            self.matrix[tuple(new_pos)] = GObj.PLAYER.nn_value
-        print(self.matrix)
+        if(self.logic_move(new_pos, direction)):
+            self.matrix[tuple(self.player_pos)] = GObj.AIR.nn_value ## remove player
+            self.matrix[tuple(new_pos)] = GObj.PLAYER.nn_value ## set player to new location
+
 
     def logic_move(self, pos, direction):
         ## set gamestats by specific fields
