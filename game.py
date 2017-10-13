@@ -1,5 +1,6 @@
 import numpy as np
 from enum import Enum
+from train_levels import levels
 
 class Direction():
     RIGHT   = [0, 1]
@@ -21,34 +22,16 @@ class GObj(Enum):
     DOOR                     = 10 ## door, only passable with a key
     GOAL                     = 11 ## the end
 
-    def one_hot(self):
+    def one_hot(self, space=True):
+        ## space removes the hotvalue for the AIR class - experimental
         ret = np.zeros(len(GObj), dtype=np.int)
-        ret[self.value] = 1
+        if not space or self is not GObj.AIR:
+            ret[self.value-1 if space else self.value] = 1
         return ret
 
     def nn_value(self):
         return 1.0*self.value/(len(GObj)-1)
 
-
-example_level = np.array([
-   # 0  1  2  3  4  5  6  7  8  9 10 11
-    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], # 0
-    [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2], # 1
-    [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2], # 2
-    [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2], # 3
-    [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2], # 4
-    [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2], # 5
-    [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2], # 6
-    [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2], # 7
-    [2, 0, 0,11, 0, 0, 0, 0, 0, 0, 0, 2], # 8
-    [2, 2, 2,10, 2, 0, 0, 0, 0, 0, 0, 2], # 9
-    [2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 2], # 10
-    [2, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 2], # 11
-    [2, 1, 2, 9, 2, 0, 0, 0, 0, 0, 0, 2], # 12
-    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]  # 13
-])
-
-100 / 18 * 10
 
 class GameField:
     def __init__(self, level_matrix, possible_best_steps):
@@ -102,13 +85,11 @@ class GameField:
         current_gobj = GObj(self.matrix.item(current_pos))
 
         ## check first the current object with ALLOWED directions:
-        if(current_gobj is GObj.ALLOW_DIRECTION_DOWN and direction is not Direction.DOWN):
-            return False
-        elif(current_gobj is GObj.ALLOW_DIRECTION_UP and direction is not Direction.UP):
-            return False
-        elif(current_gobj is GObj.ALLOW_DIRECTION_RIGHT and direction is not Direction.RIGHT):
-            return False
-        elif(current_gobj is GObj.ALLOW_DIRECTION_LEFT and direction is not Direction.LEFT):
+        if((current_gobj is GObj.ALLOW_DIRECTION_DOWN and direction is not Direction.DOWN) or
+            (current_gobj is GObj.ALLOW_DIRECTION_UP and direction is not Direction.UP) or
+            (current_gobj is GObj.ALLOW_DIRECTION_RIGHT and direction is not Direction.RIGHT) or
+            (current_gobj is GObj.ALLOW_DIRECTION_LEFT and direction is not Direction.LEFT)):
+            last_reward = -1
             return False
 
         ## check the next gameobject action
@@ -117,18 +98,22 @@ class GameField:
             return GObj.AIR
         elif(new_gobj is GObj.FPROTECT):
             self.anti_fire += 1
+            self.last_reward = 1
             return GObj.AIR
         elif(new_gobj is GObj.FIRE):
             if(self.anti_fire > 0):
                 self.anti_fire -= 1
+                self.last_reward = 1
                 return GObj.AIR
             else:
                 self.gameover = True
                 return GObj.AIR
         elif(new_gobj is GObj.WALL):
+            self.last_reward = -1
             return False
         elif(new_gobj is GObj.KEY):
             self.keys += 1
+            self.last_reward = 1
             return GObj.AIR
         elif(new_gobj is GObj.GOAL):
             self.finish = True
@@ -136,28 +121,31 @@ class GameField:
         elif(new_gobj is GObj.DOOR):
             if(self.keys > 0):
                 self.keys -= 1
+                self.last_reward = 1
                 return GObj.AIR
             else:
+                self.last_reward = -1
                 return False
+        self.last_reward = -1
         return False
 
 
 
-gf = GameField(example_level, 10)
-### HARD TEST:
-print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
-print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
-print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
-print("{:<10} - {}".format("RIGHT", gf.move(Direction.RIGHT)))
-print("{:<10} - {}".format("RIGHT", gf.move(Direction.RIGHT)))
-print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
-print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
-print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
-print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
-print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
-print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
-print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
-print(gf.finish)
-print("Reward: {:>4}/1000".format(gf.reward()))
-# print(gf.get_nn_matrix(False))
+gf = GameField(levels[0], 10)
+# ### HARD TEST:
+# print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
+# print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+# print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+# print("{:<10} - {}".format("RIGHT", gf.move(Direction.RIGHT)))
+# print("{:<10} - {}".format("RIGHT", gf.move(Direction.RIGHT)))
+# print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+# print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
+# print("{:<10} - {}".format("DOWN", gf.move(Direction.DOWN)))
+# print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+# print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+# print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+# print("{:<10} - {}".format("UP", gf.move(Direction.UP)))
+# print(gf.finish)
+# print("Reward: {:>4}/1000".format(gf.reward()))
+# # print(gf.get_nn_matrix(False))
 ##
