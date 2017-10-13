@@ -82,6 +82,10 @@ class GameField:
     def move(self, direction):
         new_pos = tuple(np.add(self.player_pos, direction))
         self.steps += 1
+        if(self.steps > (self.possible_best_steps * 20)):
+            ## If the game takes to long, its gameover
+            self.gameover = True
+            return False
         new_obj = self.logic_move(self.player_pos, new_pos, direction)
         if(new_obj):
             self.matrix[self.player_pos] = new_obj.value ## set new_obj
