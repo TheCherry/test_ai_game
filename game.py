@@ -8,13 +8,31 @@ class Direction():
     UP      = [-1, 0]
 
 class GObj(Enum):
-    AIR     = 0
-    PLAYER  = 1
-    WALL    = 2
-    FIRE    = 3
-    KEY     = 4
-    DOOR    = 5
-    GOAL    = 6
+    AIR                         = 0 ## Movable field, no actions
+    PLAYER                      = 1 ## The Player
+    WALL                        = 2 ## A Wall, player cant pass
+    FIRE                        = 3 ## Kills the player if he havent a Fire protection
+    FPROTECT                    = 4 ## Fire protection
+    RESTRICT_DIRECTION_RIGHT    = 5 ## only moveable to right
+    RESTRICT_DIRECTION_LEFT     = 6 ## only moveable to left
+    RESTRICT_DIRECTION_DOWN     = 7 ## only moveable to down
+    RESTRICT_DIRECTION_UP       = 8 ## only moveable to up
+    KEY                         = 9 ## key, needed for doors
+    DOOR                        = 10 ## door, only passable with a key
+    GOAL                        = 11 ## the end
+
+    def one_hot(self):
+        ret = np.zeros(len(GObj), dtype=np.int)
+        ret[self.value] = 1
+        return ret
+
+    def nn_value(self):
+        return self.value/100
+
+## test one_hot
+for gobj in GObj:
+    print(gobj.one_hot())
+
 
 example_level = np.array([
    # 0  1  2  3  4  5  6  7  8  9 10 11
@@ -46,8 +64,8 @@ class GameField:
         new_pos = np.add(self.player_pos, direction)
         self.steps += 1
         if(self.logic_move(new_pos)):
-            self.matrix[tuple(self.player_pos)] = GObj.AIR.value
-            self.matrix[tuple(new_pos)] = GObj.PLAYER.value
+            self.matrix[tuple(self.player_pos)] = GObj.AIR.nn_value
+            self.matrix[tuple(new_pos)] = GObj.PLAYER.nn_value
         print(self.matrix)
 
     def logic_move(self, pos):
@@ -56,9 +74,16 @@ class GameField:
         gobj = GObj(self.matrix.item(tuple(pos)))
         if(gobj is GObj.AIR):
             return True
-        if(gobj is GObj.FIRE):
-            self.gameover = True
+        elif(gobj is GObj.FPROTECT):
+            self.anti_fire += 1
             return True
+        elif(gobj is GObj.FIRE):
+            if(self.anti_fire > 0):
+                self.anti_fire -= 1
+                return True
+            else:
+                self.gameover = True
+                return True
         elif(gobj is GObj.WALL):
             return False
         elif(gobj is GObj.KEY):
